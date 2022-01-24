@@ -7,6 +7,7 @@ name = "pypi"
 pyautogui = "*"
 opencv-python = "*"
 pillow = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
