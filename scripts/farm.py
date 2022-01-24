@@ -7,18 +7,22 @@ LOG_FILE = "farm.log"
 INSTANCES_PER_COL = int(os.getenv("INSTANCES_PER_COL", 1))
 INSTANCES_PER_ROW = int(os.getenv("INSTANCES_PER_ROW", 1))
 INSTANCE_PROCESSING_MAX_ATTEMPTS = int(os.getenv("INSTANCE_PROCESSING_MAX_ATTEMPTS", 1))
+INSTANCE_FARMING_MAX_TIME = int(os.getenv("INSTANCE_FARMING_MAX_TIME", 1800))
 SEARCH_ASSET_MAX_ATTEMPTS = int(os.getenv("SEARCH_ASSET_MAX_ATTEMPTS", 3))
 SEARCH_ASSET_TIME_BETWEEN_ATTEMPTS = int(os.getenv("SEARCH_ASSET_TIME_BETWEEN_ATTEMPTS", 5))
 FF_REFRESH_PAGE = "images/ff_refresh_page.png"
-BC_CONNECT_WALLET = "images/bc_connect_wallet.png"
+FF_BOMBCRYPTO = "images/ff_bombcrypto.png"
+FF_HOME = "images/ff_home.png"
 MM_SIGN_REQUEST = "images/mm_sign_request.png"
+BC_CONNECT_WALLET = "images/bc_connect_wallet.png"
 BC_SHOW_HEROES = "images/bc_show_heroes.png"
 BC_SHOW_HEROES_WORK_ALL = "images/bc_show_heroes_work_all.png"
+BC_SHOW_HEROES_REST_ALL = "images/bc_show_heroes_rest_all.png"
 BC_SHOW_HEROES_CLOSE = "images/bc_show_heroes_close.png"
 BC_START_TREASURE_HUNT = "images/bc_start_treasure_hunt.png"
 BC_TREASURE_HUNT_CLOSE = "images/bc_treasure_hunt_close.png"
 BC_ERROR_MESSAGE = "images/bc_error_message.png"
-FF_BOMBCRYPTO = "images/ff_bombcrypto.png"
+
 
 logging.basicConfig(
     filename=LOG_FILE,
@@ -80,6 +84,16 @@ async def _process_region(region, attempt=1):
     if not (await search_and_click(region, BC_START_TREASURE_HUNT, f"start treasure hunt #{attempt}")):
         return False
 
+    await asyncio.sleep(INSTANCE_FARMING_MAX_TIME)
+    await search_and_click(region, BC_TREASURE_HUNT_CLOSE, f"close treasure hunt #{attempt}")
+    await asyncio.sleep(3)
+    await search_and_click(region, BC_SHOW_HEROES, f"show heroes #{attempt}")
+    await asyncio.sleep(3)
+    await search_and_click(region, BC_SHOW_HEROES_REST_ALL, f"rest all #{attempt}", .6)
+    await asyncio.sleep(3)
+    await search_and_click(region, FF_HOME, f"close bombcrypto #{attempt}")
+    return True
+
 async def process_region(region):
     attempt = 0
 
@@ -89,7 +103,9 @@ async def process_region(region):
         if not (await _process_region(region, attempt)):
             continue
 
-        break
+        return True
+
+    return False
 
 async def main():
     ss = pag.size()
