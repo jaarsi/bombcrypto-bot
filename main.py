@@ -10,9 +10,9 @@ from datetime import datetime
 
 INSTANCES_PER_COL = int(os.getenv("INSTANCES_PER_COL", 1))
 INSTANCES_PER_ROW = int(os.getenv("INSTANCES_PER_ROW", 1))
-INSTANCE_PROCESSING_MAX_TRIES = int(os.getenv("INSTANCE_PROCESSING_MAX_TRIES", 1))
-SEARCH_ASSET_MAX_TRIES = int(os.getenv("SEARCH_ASSET_MAX_TRIES", 3))
-SEARCH_ASSET_TIME_BETWEEN_TRIES = int(os.getenv("SEARCH_ASSET_TIME_BETWEEN_TRIES", 5))
+INSTANCE_PROCESSING_MAX_ATTEMPTS = int(os.getenv("INSTANCE_PROCESSING_MAX_ATTEMPTS", 1))
+SEARCH_ASSET_MAX_ATTEMPTS = int(os.getenv("SEARCH_ASSET_MAX_ATTEMPTS", 3))
+SEARCH_ASSET_TIME_BETWEEN_ATTEMPTS = int(os.getenv("SEARCH_ASSET_TIME_BETWEEN_ATTEMPTS", 5))
 FF_REFRESH_PAGE = "images/ff_refresh_page.png"
 BC_CONNECT_WALLET = "images/bc_connect_wallet.png"
 MM_SIGN_REQUEST = "images/mm_sign_request.png"
@@ -25,61 +25,73 @@ BC_ERROR_MESSAGE = "images/bc_error_message.png"
 FF_BOMBCRYPTO = "images/ff_bombcrypto.png"
 
 logging.basicConfig(
-    filename='messages.log',
+    # filename="messages.log",
     encoding='utf-8',
     level=logging.INFO,
     format="[%(asctime)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
+async def _search_and_click(region, asset, description, confidence, attempt=1):
+    p = pag.locateCenterOnScreen(asset, confidence=confidence, region=region)
+    logging.info( f"Region {region}: Searching for '{description}' => Get position {p} #{attempt}")
+
+    if not p:
+        return False
+
+    pag.click(p.x, p.y)
+    return True
+
 async def search_and_click(region, asset, description, confidence=.9):
-    tries = 0
+    attempt = 0
 
-    while (tries  < SEARCH_ASSET_MAX_TRIES):
-        tries += 1
-        p = pag.locateCenterOnScreen(asset, confidence=confidence, region=region)
-        logging.info( f"{region}: Searching for '{description}' => Get position {p} #{tries}")
+    while (attempt  < SEARCH_ASSET_MAX_ATTEMPTS):
+        attempt += 1
 
-        if not p:
-            await asyncio.sleep(SEARCH_ASSET_TIME_BETWEEN_TRIES)
+        if not (await _search_and_click(region, asset, description, confidence, attempt)):
+            await asyncio.sleep(SEARCH_ASSET_TIME_BETWEEN_ATTEMPTS)
             continue
 
-        pag.click(p.x, p.y)
         return True
 
     return False
 
+async def _process_region(region, attempt=1):
+    if not (await search_and_click(region, FF_BOMBCRYPTO, f"enter bombcrypto #{attempt}")):
+        return False
+
+    await asyncio.sleep(10)
+
+    if not (await search_and_click(region, BC_CONNECT_WALLET, f"connect wallet #{attempt}")):
+        return False
+
+    await asyncio.sleep(10)
+
+    if not (await search_and_click(None, MM_SIGN_REQUEST, f"sign metamask #{attempt}")):
+        return False
+
+    await asyncio.sleep(20)
+
+    if not (await search_and_click(region, BC_SHOW_HEROES, f"show heroes #{attempt}")):
+        return False
+
+    await asyncio.sleep(3)
+    await search_and_click(region, BC_SHOW_HEROES_WORK_ALL, f"work all #{attempt}", .6)
+    await asyncio.sleep(3)
+    await search_and_click(region, BC_SHOW_HEROES_CLOSE, f"close heroes menu #{attempt}")
+    await asyncio.sleep(3)
+
+    if not (await search_and_click(region, BC_START_TREASURE_HUNT, f"start treasure hunt #{attempt}")):
+        return False
+
+
 async def process_region(region):
-    tries = 0
+    attempt = 0
 
-    while tries < INSTANCE_PROCESSING_MAX_TRIES:
-        tries += 1
+    while attempt < INSTANCE_PROCESSING_MAX_ATTEMPTS:
+        attempt += 1
 
-        if not (await search_and_click(region, FF_BOMBCRYPTO, f"enter bombcrypto #{tries}")):
-            continue
-
-        await asyncio.sleep(10)
-
-        if not (await search_and_click(region, BC_CONNECT_WALLET, f"connect wallet #{tries}")):
-            continue
-
-        await asyncio.sleep(10)
-
-        if not (await search_and_click(None, MM_SIGN_REQUEST, f"sign metamask #{tries}")):
-            continue
-
-        await asyncio.sleep(20)
-
-        if not (await search_and_click(region, BC_SHOW_HEROES, f"show heroes #{tries}")):
-            continue
-
-        await asyncio.sleep(3)
-        await search_and_click(region, BC_SHOW_HEROES_WORK_ALL, f"work all #{tries}", .6)
-        await asyncio.sleep(3)
-        await search_and_click(region, BC_SHOW_HEROES_CLOSE, f"close heroes menu #{tries}")
-        await asyncio.sleep(3)
-
-        if not (await search_and_click(region, BC_START_TREASURE_HUNT, f"start treasure hunt #{tries}")):
+        if not (await _process_region(region, attempt)):
             continue
 
         break
