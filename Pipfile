@@ -7,9 +7,11 @@ name = "pypi"
 pyautogui = "*"
 opencv-python = "*"
 pillow = "*"
-python-dotenv = "*"
 
 [dev-packages]
 
 [requires]
 python_version = "3.10"
+
+[scripts]
+farm = "python scripts/farm.py"

@@ -1,13 +1,9 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import os
 import asyncio
 import pyautogui as pag
 import logging
-from datetime import datetime
 
+LOG_FILE = "farm.log"
 INSTANCES_PER_COL = int(os.getenv("INSTANCES_PER_COL", 1))
 INSTANCES_PER_ROW = int(os.getenv("INSTANCES_PER_ROW", 1))
 INSTANCE_PROCESSING_MAX_ATTEMPTS = int(os.getenv("INSTANCE_PROCESSING_MAX_ATTEMPTS", 1))
@@ -25,7 +21,7 @@ BC_ERROR_MESSAGE = "images/bc_error_message.png"
 FF_BOMBCRYPTO = "images/ff_bombcrypto.png"
 
 logging.basicConfig(
-    # filename="messages.log",
+    filename=LOG_FILE,
     encoding='utf-8',
     level=logging.INFO,
     format="[%(asctime)s] %(message)s",
@@ -83,7 +79,6 @@ async def _process_region(region, attempt=1):
 
     if not (await search_and_click(region, BC_START_TREASURE_HUNT, f"start treasure hunt #{attempt}")):
         return False
-
 
 async def process_region(region):
     attempt = 0
