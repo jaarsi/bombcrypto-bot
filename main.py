@@ -10,7 +10,7 @@ from datetime import datetime
 
 INSTANCES_PER_COL = int(os.getenv("INSTANCES_PER_COL", 1))
 INSTANCES_PER_ROW = int(os.getenv("INSTANCES_PER_ROW", 1))
-INSTANCES_WAIT_BETWEEN_PROCCESSING = int(os.getenv("INSTANCES_WAIT_BETWEEN_PROCCESSING", 60))
+INSTANCE_PROCESSING_MAX_TRIES = int(os.getenv("INSTANCE_PROCESSING_MAX_TRIES", 1))
 SEARCH_ASSET_MAX_TRIES = int(os.getenv("SEARCH_ASSET_MAX_TRIES", 3))
 SEARCH_ASSET_TIME_BETWEEN_TRIES = int(os.getenv("SEARCH_ASSET_TIME_BETWEEN_TRIES", 5))
 FF_REFRESH_PAGE = "images/ff_refresh_page.png"
@@ -32,9 +32,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-class EBCError(Exception):
-    pass
-
 async def search_and_click(region, asset, description, confidence=.9):
     tries = 0
 
@@ -48,23 +45,44 @@ async def search_and_click(region, asset, description, confidence=.9):
             continue
 
         pag.click(p.x, p.y)
-        break
+        return True
 
-async def process_region(region, wait_before_start):
-    await asyncio.sleep(wait_before_start)
-    await search_and_click(region, FF_BOMBCRYPTO, "enter bombcrypto")
-    await asyncio.sleep(30)
-    await search_and_click(region, BC_CONNECT_WALLET, "connect wallet")
-    await asyncio.sleep(10)
-    await search_and_click(None, MM_SIGN_REQUEST, "sign metamask")
-    await asyncio.sleep(40)
-    await search_and_click(region, BC_SHOW_HEROES, "show heroes")
-    await asyncio.sleep(3)
-    await search_and_click(region, BC_SHOW_HEROES_WORK_ALL, "work all", .6)
-    await asyncio.sleep(3)
-    await search_and_click(region, BC_SHOW_HEROES_CLOSE, "close heroes menu")
-    await asyncio.sleep(3)
-    await search_and_click(region, BC_START_TREASURE_HUNT, "start treasure hunt")
+    return False
+
+async def process_region(region):
+    tries = 0
+
+    while tries < INSTANCE_PROCESSING_MAX_TRIES:
+        tries += 1
+
+        if not (await search_and_click(region, FF_BOMBCRYPTO, f"enter bombcrypto #{tries}")):
+            continue
+
+        await asyncio.sleep(10)
+
+        if not (await search_and_click(region, BC_CONNECT_WALLET, f"connect wallet #{tries}")):
+            continue
+
+        await asyncio.sleep(10)
+
+        if not (await search_and_click(None, MM_SIGN_REQUEST, f"sign metamask #{tries}")):
+            continue
+
+        await asyncio.sleep(20)
+
+        if not (await search_and_click(region, BC_SHOW_HEROES, f"show heroes #{tries}")):
+            continue
+
+        await asyncio.sleep(3)
+        await search_and_click(region, BC_SHOW_HEROES_WORK_ALL, f"work all #{tries}", .6)
+        await asyncio.sleep(3)
+        await search_and_click(region, BC_SHOW_HEROES_CLOSE, f"close heroes menu #{tries}")
+        await asyncio.sleep(3)
+
+        if not (await search_and_click(region, BC_START_TREASURE_HUNT, f"start treasure hunt #{tries}")):
+            continue
+
+        break
 
 async def main():
     ss = pag.size()
@@ -78,7 +96,7 @@ async def main():
         for x in range(INSTANCES_PER_COL)
         for y in range(INSTANCES_PER_ROW)
     ]
-    jobs = [ process_region(region, i*INSTANCES_WAIT_BETWEEN_PROCCESSING) for i, region in enumerate(regions, 0) ]
+    jobs = [ process_region(region) for region in regions ]
     return await asyncio.gather(*jobs)
 
 if __name__ == "__main__":
