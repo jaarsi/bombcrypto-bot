@@ -23,32 +23,32 @@ BC_START_TREASURE_HUNT = "images/bc_start_treasure_hunt.png"
 BC_TREASURE_HUNT_CLOSE = "images/bc_treasure_hunt_close.png"
 BC_ERROR_MESSAGE = "images/bc_error_message.png"
 
-
 logging.basicConfig(
-    filename=LOG_FILE,
+    # filename=LOG_FILE,
     encoding='utf-8',
     level=logging.INFO,
-    format="[%(asctime)s] %(message)s",
+    format="%(asctime)s => %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-async def _search_and_click(region, asset, description, confidence, attempt=1):
-    p = pag.locateCenterOnScreen(asset, confidence=confidence, region=region)
-    logging.info( f"Region {region}: Searching for '{description}' => Get position {p} #{attempt}")
-
-    if not p:
-        return False
+async def _search_and_click(region, asset, confidence):
+    if not (p := pag.locateCenterOnScreen(asset, confidence=confidence, region=region)):
+        return None
 
     pag.click(p.x, p.y)
-    return True
+    return p
 
-async def search_and_click(region, asset, description, confidence=.9):
+async def search_and_click(region, asset, description, confidence, process_attempt):
     attempt = 0
 
     while (attempt  < SEARCH_ASSET_MAX_ATTEMPTS):
         attempt += 1
+        asset_pos = await _search_and_click(region, asset, confidence)
+        logging.info(
+            f"SEARCH FOR {description} ON REGION {repr(region)} GOT {asset_pos} {process_attempt}|{attempt}"
+        )
 
-        if not (await _search_and_click(region, asset, description, confidence, attempt)):
+        if not asset_pos:
             await asyncio.sleep(SEARCH_ASSET_TIME_BETWEEN_ATTEMPTS)
             continue
 
@@ -56,42 +56,42 @@ async def search_and_click(region, asset, description, confidence=.9):
 
     return False
 
-async def _process_region(region, attempt=1):
-    if not (await search_and_click(region, FF_BOMBCRYPTO, f"enter bombcrypto #{attempt}")):
+async def _process_region(region, attempt):
+    if not (await search_and_click(region, FF_BOMBCRYPTO, "ENTER BOMBCRYPTO", .9, attempt)):
         return False
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(15)
 
-    if not (await search_and_click(region, BC_CONNECT_WALLET, f"connect wallet #{attempt}")):
+    if not (await search_and_click(region, BC_CONNECT_WALLET, "CONNECT WALLET", .9, attempt)):
         return False
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(15)
 
-    if not (await search_and_click(None, MM_SIGN_REQUEST, f"sign metamask #{attempt}")):
+    if not (await search_and_click(None, MM_SIGN_REQUEST, "SIGN METAMASK", .9, attempt)):
         return False
 
-    await asyncio.sleep(20)
+    await asyncio.sleep(30)
 
-    if not (await search_and_click(region, BC_SHOW_HEROES, f"show heroes #{attempt}")):
+    if not (await search_and_click(region, BC_SHOW_HEROES, "SHOW HEROES", .9, attempt)):
         return False
 
     await asyncio.sleep(3)
-    await search_and_click(region, BC_SHOW_HEROES_WORK_ALL, f"work all #{attempt}", .6)
+    await search_and_click(region, BC_SHOW_HEROES_WORK_ALL, "WORK ALL", .6, attempt)
     await asyncio.sleep(3)
-    await search_and_click(region, BC_SHOW_HEROES_CLOSE, f"close heroes menu #{attempt}")
+    await search_and_click(region, BC_SHOW_HEROES_CLOSE, "CLOSE HEROES MENU", .9, attempt)
     await asyncio.sleep(3)
 
-    if not (await search_and_click(region, BC_START_TREASURE_HUNT, f"start treasure hunt #{attempt}")):
+    if not (await search_and_click(region, BC_START_TREASURE_HUNT, "START TREASURE HUNT", .9, attempt)):
         return False
 
     await asyncio.sleep(INSTANCE_FARMING_MAX_TIME)
-    await search_and_click(region, BC_TREASURE_HUNT_CLOSE, f"close treasure hunt #{attempt}")
+    await search_and_click(region, BC_TREASURE_HUNT_CLOSE, "CLOSE TREASURE HUNT", .9, attempt)
     await asyncio.sleep(3)
-    await search_and_click(region, BC_SHOW_HEROES, f"show heroes #{attempt}")
+    await search_and_click(region, BC_SHOW_HEROES, "SHOW HEROES", .9, attempt)
     await asyncio.sleep(3)
-    await search_and_click(region, BC_SHOW_HEROES_REST_ALL, f"rest all #{attempt}", .6)
+    await search_and_click(region, BC_SHOW_HEROES_REST_ALL, "REST ALL", .6, attempt)
     await asyncio.sleep(3)
-    await search_and_click(region, FF_HOME, f"close bombcrypto #{attempt}")
+    await search_and_click(region, FF_HOME, "CLOSE BOMBCRYPTO", .9, attempt)
     return True
 
 async def process_region(region):
@@ -123,13 +123,13 @@ async def main():
     return await asyncio.gather(*jobs)
 
 if __name__ == "__main__":
-    logging.info("[Starting]")
+    logging.info("STARTING")
 
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.warning("[Interrupted]")
+        logging.warning("INTERRUPTED")
     except Exception as e:
         logging.error(str(e))
     else:
-        logging.info("[Finished]")
+        logging.info("FINISHED")
