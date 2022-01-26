@@ -3,9 +3,8 @@ import asyncio
 import pyautogui as pag
 import logging
 from random import randint
-from datetime import datetime
 
-LOG_FILE = datetime.now().strftime("log/farm_%Y%m%d_%H%M%S.log")
+LOG_FILE = "farm.log"
 INSTANCES_PER_COL = int(os.getenv("INSTANCES_PER_COL", 1))
 INSTANCES_PER_ROW = int(os.getenv("INSTANCES_PER_ROW", 1))
 INSTANCE_PROCESSING_MAX_ATTEMPTS = int(os.getenv("INSTANCE_PROCESSING_MAX_ATTEMPTS", 1))
