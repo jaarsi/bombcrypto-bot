@@ -27,11 +27,11 @@ BC_TREASURE_HUNT_CLOSE = "images/bc_treasure_hunt_close.png"
 BC_ERROR_MESSAGE = "images/bc_error_message.png"
 
 logging.basicConfig(
-    filename=LOG_FILE,
     encoding='utf-8',
     level=logging.INFO,
     format="%(asctime)s => %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.StreamHandler(), logging.FileHandler(LOG_FILE, mode="w")]
 )
 
 async def _search_and_click(region, asset, confidence):
