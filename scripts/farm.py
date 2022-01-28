@@ -1,10 +1,9 @@
 import os
 import asyncio
 import pyautogui as pag
-import logging
 from random import randint
+from app.logging import create_logger
 
-LOG_FILE = "farm.log"
 INSTANCES_PER_COL = int(os.getenv("INSTANCES_PER_COL", 1))
 INSTANCES_PER_ROW = int(os.getenv("INSTANCES_PER_ROW", 1))
 INSTANCE_PROCESSING_MAX_ATTEMPTS = int(os.getenv("INSTANCE_PROCESSING_MAX_ATTEMPTS", 1))
@@ -26,13 +25,7 @@ BC_TREASURE_HUNT_START = "images/bc_treasure_hunt_start.png"
 BC_TREASURE_HUNT_CLOSE = "images/bc_treasure_hunt_close.png"
 BC_ERROR_MESSAGE = "images/bc_error_message.png"
 
-logging.basicConfig(
-    encoding='utf-8',
-    level=logging.INFO,
-    format="%(asctime)s => %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[logging.StreamHandler(), logging.FileHandler(LOG_FILE, mode="w")]
-)
+logger = create_logger("farm")
 
 async def _search_and_click(region, asset, confidence):
     if not (p := pag.locateOnScreen(asset, confidence=confidence, region=region)):
@@ -43,7 +36,7 @@ async def _search_and_click(region, asset, confidence):
         p.top + randint(1, p.height-1)
     )
     pag.click(x, y)
-    return p, x, y
+    return x, y
 
 async def search_and_click(region, asset, description, confidence, process_attempt):
     attempt = 0
@@ -51,9 +44,12 @@ async def search_and_click(region, asset, description, confidence, process_attem
     while (attempt  < SEARCH_ASSET_MAX_ATTEMPTS):
         attempt += 1
         asset_pos = await _search_and_click(region, asset, confidence)
-        logging.info(
-            f"SEARCH FOR {description} ON REGION {repr(region)} GOT {asset_pos} {process_attempt}|{attempt}"
-        )
+        logger.info(description, extra={
+            "region": repr(region),
+            "asset_pos": asset_pos,
+            "process_attempt": process_attempt,
+            "search_attempt": attempt
+        })
 
         if not asset_pos:
             await asyncio.sleep(SEARCH_ASSET_TIME_BETWEEN_ATTEMPTS)
@@ -132,13 +128,13 @@ async def main():
     return await asyncio.gather(*jobs)
 
 if __name__ == "__main__":
-    logging.info("STARTING")
+    logger.info("STARTING")
 
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.warning("INTERRUPTED")
+        logger.error("INTERRUPTED")
     except Exception as e:
-        logging.error(str(e))
+        logger.error(str(e))
     else:
-        logging.info("FINISHED")
+        logger.info("FINISHED")
