@@ -7,7 +7,14 @@ async def farm_stop(region, wait_before_start):
     await asyncio.sleep(3)
     core.search_and_click(region, consts.BC_HEROES_MENU_OPEN, consts.INSTANCE_ASSET_CONFIDENCE)
     await asyncio.sleep(3)
-    core.search_and_click(region, consts.BC_HEROES_MENU_REST_ALL, consts.INSTANCE_ASSET_CONFIDENCE)
+    attempts = 0
+
+    while (
+        core.search_and_click(region, consts.BC_HEROES_MENU_REST_ALL, consts.INSTANCE_ASSET_CONFIDENCE)
+        and attempts < 3
+    ):
+        attempts += 1
+
     await asyncio.sleep(3)
     core.search_and_click(region, consts.FF_BOMBCRYPTO_CLOSE, consts.INSTANCE_ASSET_CONFIDENCE)
 

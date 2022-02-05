@@ -44,7 +44,14 @@ async def _process_region(region, attempt):
         return False
 
     await asyncio.sleep(3)
-    await search_and_click(region, consts.BC_HEROES_MENU_WORK_ALL, "WORK ALL", consts.INSTANCE_ASSET_CONFIDENCE, attempt)
+    attempts = 0
+
+    while (
+        await search_and_click(region, consts.BC_HEROES_MENU_WORK_ALL, "WORK ALL", consts.INSTANCE_ASSET_CONFIDENCE, attempt)
+        and attempts < 3
+    ):
+        attempts += 1
+
     await asyncio.sleep(3)
     await search_and_click(region, consts.BC_HEROES_MENU_CLOSE, "CLOSE HEROES MENU", consts.INSTANCE_ASSET_CONFIDENCE, attempt)
     await asyncio.sleep(3)
