@@ -28,17 +28,17 @@ async def _process_region(region, attempt):
     if not (await search_and_click(region, consts.FF_BOMBCRYPTO_START, "ENTER BOMBCRYPTO", consts.INSTANCE_ASSET_CONFIDENCE, attempt)):
         return False
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(30)
 
     if not (await search_and_click(region, consts.BC_CONNECT_WALLET, "CONNECT WALLET", consts.INSTANCE_ASSET_CONFIDENCE, attempt)):
         return False
 
-    await asyncio.sleep(15)
+    await asyncio.sleep(10)
 
     if not (await search_and_click(None, consts.MM_SIGN_REQUEST, "SIGN METAMASK", consts.INSTANCE_ASSET_CONFIDENCE, attempt)):
         return False
 
-    await asyncio.sleep(15)
+    await asyncio.sleep(60)
 
     if not (await search_and_click(region, consts.BC_HEROES_MENU_OPEN, "SHOW HEROES", consts.INSTANCE_ASSET_CONFIDENCE, attempt)):
         return False
@@ -78,7 +78,10 @@ async def process_region(region, wait_before_start):
     return False
 
 async def main():
-    jobs = [ process_region(region, i*120) for i, region in enumerate(core.get_screen_regions(), 0) ]
+    jobs = [ 
+	process_region(region, i*120) 
+	for i, region in enumerate(core.get_screen_regions(), 0) 
+    ]
     return await asyncio.gather(*jobs)
 
 if __name__ == "__main__":
