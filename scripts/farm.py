@@ -35,6 +35,11 @@ async def _process_region(region, attempt):
 
     await asyncio.sleep(10)
 
+    if not (await search_and_click(region, consts.BC_CONNECT_WALLET2, "CONNECT WALLET2", consts.INSTANCE_ASSET_CONFIDENCE, attempt)):
+        return False
+
+    await asyncio.sleep(10)
+
     if not (await search_and_click(None, consts.MM_SIGN_REQUEST, "SIGN METAMASK", consts.INSTANCE_ASSET_CONFIDENCE, attempt)):
         return False
 
@@ -78,9 +83,9 @@ async def process_region(region, wait_before_start):
     return False
 
 async def main():
-    jobs = [ 
-	process_region(region, i*120) 
-	for i, region in enumerate(core.get_screen_regions(), 0) 
+    jobs = [
+	process_region(region, i*120)
+	for i, region in enumerate(core.get_screen_regions(), 0)
     ]
     return await asyncio.gather(*jobs)
 
