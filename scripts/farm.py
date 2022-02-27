@@ -33,7 +33,7 @@ async def _process_region(region, attempt):
     if not (await search_and_click(region, consts.BC_CONNECT_WALLET, "CONNECT WALLET", consts.INSTANCE_ASSET_CONFIDENCE, attempt)):
         return False
 
-    await asyncio.sleep(10)
+    await asyncio.sleep(3)
 
     if not (await search_and_click(region, consts.BC_CONNECT_WALLET2, "CONNECT WALLET2", consts.INSTANCE_ASSET_CONFIDENCE, attempt)):
         return False
